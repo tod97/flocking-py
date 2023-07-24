@@ -42,6 +42,14 @@ def select_mode():
             print("Invalid choice. Please select a valid option.")
 
 def get_formation(leader, mode):
+    if mode == 'line':
+        return [
+            leader,
+            Node(leader.x, leader.y-1),
+            Node(leader.x, leader.y-2),
+            Node(leader.x, leader.y-3),
+            Node(leader.x, leader.y-4),
+        ]
     if mode == 'triangle':
         return [
             leader,
