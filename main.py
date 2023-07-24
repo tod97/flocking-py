@@ -37,9 +37,11 @@ def select_mode():
             mode = 'manual'
             break
         elif choice == "0":
-            break
+            return False
         else:
             print("Invalid choice. Please select a valid option.")
+            return False
+    return True
 
 def get_formation(leader, mode):
     if mode == 'line':
@@ -96,7 +98,20 @@ def plot_nodes(nodes, leader_index):
     plt.draw()
 
 def updateLeader(leader):
-    if mode == 'linear':
+    if mode == 'manual':
+        key_pressed = readkey()
+        if key_pressed == 'q':
+            return False
+        elif key_pressed == key.UP:
+            nodes[0].y += leader_velocity
+        elif key_pressed == key.DOWN:
+            nodes[0].y -= leader_velocity
+        elif key_pressed == key.RIGHT:
+            nodes[0].x += leader_velocity
+        elif key_pressed == key.LEFT:
+            nodes[0].x -= leader_velocity
+    
+    elif mode == 'linear':
         leader.x += leader_velocity
 
     elif mode == 'circular':
@@ -108,6 +123,8 @@ def updateLeader(leader):
 
     else:
         print('Invalid mode')
+        return False
+    return True
 
 def attractive_force(node, leader, distance):
     angolo = math.atan2(node.y - leader.y, node.x - leader.x)
@@ -126,20 +143,9 @@ def simulate_movement(nodes, distances):
 
     plot_nodes(nodes, leader_index=0)
     while True:
-        if mode == 'manual':
-            key_pressed = readkey()
-            if key_pressed == 'q':
-                break
-            elif key_pressed == key.UP:
-                nodes[0].y += leader_velocity
-            elif key_pressed == key.DOWN:
-                nodes[0].y -= leader_velocity
-            elif key_pressed == key.RIGHT:
-                nodes[0].x += leader_velocity
-            elif key_pressed == key.LEFT:
-                nodes[0].x -= leader_velocity
-        else:
-            updateLeader(nodes[0])
+        res = updateLeader(nodes[0])
+        if not res:
+            break
 
         for i in range(1,len(nodes)):
             attractive_force(nodes[i], nodes[0], distances[i][0])
@@ -152,7 +158,6 @@ def simulate_movement(nodes, distances):
 
 nodes = get_formation(Node(0, 0), 'triangle')
 
-select_mode()
-
-distances = get_distances(nodes)
-simulate_movement(nodes, distances)
+if select_mode():
+    distances = get_distances(nodes)
+    simulate_movement(nodes, distances)
