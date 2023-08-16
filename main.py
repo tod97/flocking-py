@@ -4,7 +4,7 @@ import math
 from readchar import readkey, key
 
 leader_velocity = 0.5  # Leader's velocity (units of displacement per second)
-mode = 'linear'  # 'linear', 'circular', 'manual'
+leader_trajectory = 'linear'  # 'linear', 'circular', 'manual'
 
 class Node:
     def __init__(self, x, y):
@@ -17,8 +17,8 @@ class Node:
     def distance(self, node):
         return np.sqrt((self.x - node.x)**2 + (self.y - node.y)**2)
 
-def select_mode():
-    global mode
+def select_trajectory():
+    global leader_trajectory
     while True:
         print("Menu:")
         print("1. Linear trajectory")
@@ -28,13 +28,13 @@ def select_mode():
         choice = input("Enter the number corresponding to your choice: ")
 
         if choice == "1":
-            mode = 'linear'
+            leader_trajectory = 'linear'
             break
         elif choice == "2":
-            mode = 'circular'
+            leader_trajectory = 'circular'
             break
         elif choice == "3":
-            mode = 'manual'
+            leader_trajectory = 'manual'
             break
         elif choice == "0":
             return False
@@ -98,23 +98,23 @@ def plot_nodes(nodes, leader_index):
     plt.draw()
 
 def updateLeader(leader):
-    if mode == 'manual':
+    if leader_trajectory == 'manual':
         key_pressed = readkey()
         if key_pressed == 'q':
             return False
         elif key_pressed == key.UP:
-            nodes[0].y += leader_velocity
+            leader.y += leader_velocity
         elif key_pressed == key.DOWN:
-            nodes[0].y -= leader_velocity
+            leader.y -= leader_velocity
         elif key_pressed == key.RIGHT:
-            nodes[0].x += leader_velocity
+            leader.x += leader_velocity
         elif key_pressed == key.LEFT:
-            nodes[0].x -= leader_velocity
+            leader.x -= leader_velocity
     
-    elif mode == 'linear':
+    elif leader_trajectory == 'linear':
         leader.x += leader_velocity
 
-    elif mode == 'circular':
+    elif leader_trajectory == 'circular':
         radius = 5
         current_angle = math.atan2(leader.y, leader.x+radius)
         new_angle = current_angle + 0.1
@@ -122,7 +122,7 @@ def updateLeader(leader):
         leader.y = (radius * np.sin(new_angle))
 
     else:
-        print('Invalid mode')
+        print('Invalid trajectory')
         return False
     return True
 
@@ -158,6 +158,6 @@ def simulate_movement(nodes, distances):
 
 nodes = get_formation(Node(0, 0), 'triangle')
 
-if select_mode():
+if select_trajectory():
     distances = get_distances(nodes)
     simulate_movement(nodes, distances)
