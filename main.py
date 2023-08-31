@@ -14,6 +14,9 @@ class Node:
     def __str__(self):
         return f"x: {self.x}, y: {self.y}"
 
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
     def distance(self, node):
         return np.sqrt((self.x - node.x)**2 + (self.y - node.y)**2)
 
@@ -64,10 +67,9 @@ def get_formation(leader, mode):
     if mode == 'square':
         return [
             leader,
-            Node(leader.x-1, leader.y+1),
-            Node(leader.x+1, leader.y+1),
-            Node(leader.x-1, leader.y-1),
-            Node(leader.x+1, leader.y-1),
+            Node(leader.x, leader.y-2),
+            Node(leader.x-2, leader.y-2),
+            Node(leader.x-2, leader.y),
         ]
     return [leader]
 
@@ -126,17 +128,34 @@ def updateLeader(leader):
         return False
     return True
 
-def attractive_force(node, leader, distance):
-    angolo = math.atan2(node.y - leader.y, node.x - leader.x)
-    node.x = leader.x + distance * math.cos(angolo)
-    node.y = leader.y + distance * math.sin(angolo)
+def attractive_force(i, nodes, distances):
+    print('#####################')
+    force = np.array([0,0])
+    vector_i = np.array([nodes[i].x, nodes[i].y])
+
+    for j in range(0,len(nodes)):
+        if i == j:
+            continue
+        vector_j = np.array([nodes[j].x, nodes[j].y])
+
+        print(f'vector {i}: {vector_i}')
+        print(f'vector {j}: {vector_j}')
+        print(f'({np.linalg.norm(vector_i - vector_j)**2} - {distances[i][j]**2}) * ({vector_j - vector_i}) = {(np.linalg.norm(vector_i - vector_j)**2 - distances[i][j]**2) * (vector_j - vector_i)}')
+        force = force + (np.linalg.norm(vector_i - vector_j)**2 - distances[i][j]**2) * (vector_j - vector_i)
+        print('-------------------')
+
+    scaling_factor = 0.035
+    print(f'force: {force}')
+    print(f'force scaled: {scaling_factor * force}')
+    print(f'node before: {nodes[i]}')
+    nodes[i].x = nodes[i].x + scaling_factor * force[0]
+    nodes[i].y = nodes[i].y + scaling_factor * force[1]
+    print(f'node after: {nodes[i]}')
+    print('-------------------')
+    print('#####################')
 
 def repulsive_force(node, other_node, distance):
-    # mantain the distance between nodes
-    if node.distance(other_node) < distance:
-        angolo = math.atan2(node.y - other_node.y, node.x - other_node.x)
-        node.x = other_node.x + distance * math.cos(angolo)
-        node.y = other_node.y + distance * math.sin(angolo)
+    print("TODO")
 
 def simulate_movement(nodes, distances):
     plt.ion()  # Turn on interactive mode for live plot
@@ -148,16 +167,20 @@ def simulate_movement(nodes, distances):
             break
 
         for i in range(1,len(nodes)):
-            attractive_force(nodes[i], nodes[0], distances[i][0])
+            attractive_force(i, nodes, distances)
 
-            for j in range(1,len(nodes)):
+            """ for j in range(1,len(nodes)):
                   if i != j:
-                     repulsive_force(nodes[i], nodes[j], distances[i][j])
+                     repulsive_force(nodes[i], nodes[j], distances[i][j]) """
 
         plot_nodes(nodes, leader_index=0)
 
 nodes = get_formation(Node(0, 0), 'triangle')
 
-if select_trajectory():
+""" if select_trajectory():
     distances = get_distances(nodes)
-    simulate_movement(nodes, distances)
+    simulate_movement(nodes, distances) """
+
+leader_trajectory = 'manual'
+distances = get_distances(nodes)
+simulate_movement(nodes, distances)
