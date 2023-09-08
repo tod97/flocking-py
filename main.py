@@ -3,6 +3,7 @@ import numpy as np
 import math
 from readchar import readkey, key
 
+attractive_scaling_factor = 0.07 # Scaling factor for attractive force
 leader_velocity = 0.5  # Leader's velocity (units of displacement per second)
 leader_trajectory = 'linear'  # 'linear', 'circular', 'manual'
 
@@ -84,6 +85,8 @@ def get_formation(leader, mode):
     return nodes, distance_matrix
 
 def get_all_distances(nodes):
+    global attractive_scaling_factor
+    attractive_scaling_factor = 0.035
     distance_matrix = np.zeros((len(nodes), len(nodes)))
     for i in range(len(nodes)):
         for j in range(i+1, len(nodes)):
@@ -141,9 +144,9 @@ def updateLeader(leader):
 
 def attractive_force(i, nodes, distances):
     #print('#####################')
+    global attractive_scaling_factor
     force = np.array([0,0])
     vector_i = np.array([nodes[i].x, nodes[i].y])
-    scaling_factor = 0.035
 
     for j in range(0,len(nodes)):
         if distances[i][j] == 0 or i == j:
@@ -159,8 +162,8 @@ def attractive_force(i, nodes, distances):
     #print(f'force: {force}')
     #print(f'force scaled: {scaling_factor * force}')
     #print(f'node before: {nodes[i]}')
-    nodes[i].x = nodes[i].x + scaling_factor * force[0]
-    nodes[i].y = nodes[i].y + scaling_factor * force[1]
+    nodes[i].x = nodes[i].x + attractive_scaling_factor * force[0]
+    nodes[i].y = nodes[i].y + attractive_scaling_factor * force[1]
     #print(f'node after: {nodes[i]}')
     #print('-------------------')
     #print('#####################')
