@@ -146,7 +146,7 @@ def attractive_force(i, nodes, distances):
     scaling_factor = 0.035
 
     for j in range(0,len(nodes)):
-        if i == j:
+        if distances[i][j] == 0 or i == j:
             continue
         vector_j = np.array([nodes[j].x, nodes[j].y])
 
