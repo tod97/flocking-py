@@ -3,7 +3,8 @@ import numpy as np
 import math
 from readchar import readkey, key
 
-attractive_scaling_factor = 0.07 # Scaling factor for attractive force
+attractive_scaling_factor = 0 # Scaling factor for attractive force
+repulsive_scaling_factor = 0 # Scaling factor for repulsive force
 leader_velocity = 0.5  # Leader's velocity (units of displacement per second)
 leader_trajectory = 'linear'  # 'linear', 'circular', 'manual'
 
@@ -48,13 +49,20 @@ def select_trajectory():
     return True
 
 def get_formation(leader, mode):
+    global attractive_scaling_factor
+    global repulsive_scaling_factor
+
     if mode == 'point':
+        attractive_scaling_factor = 0.07
+        repulsive_scaling_factor = 0.3
         nodes = [leader, Node(leader.x, leader.y-1)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
         set_distance(distance_matrix, 0, 1, nodes[0].distance(nodes[1]))
         return nodes, distance_matrix
 
     if mode == 'line':
+        attractive_scaling_factor = 0.07
+        repulsive_scaling_factor = 0.35
         nodes = [leader, Node(leader.x, leader.y-1), Node(leader.x, leader.y-2), Node(leader.x, leader.y-3), Node(leader.x, leader.y-4)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
         set_distance(distance_matrix, 0, 1, nodes[0].distance(nodes[1]))
@@ -64,6 +72,8 @@ def get_formation(leader, mode):
         return nodes, distance_matrix
 
     if mode == 'triangle':
+        attractive_scaling_factor = 0.07
+        repulsive_scaling_factor = 8
         nodes = [leader, Node(leader.x-1, -1), Node(leader.x+1, -1), Node(leader.x-2, -2), Node(leader.x, -2), Node(leader.x+2, -2)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
         set_distance(distance_matrix, 0, 1, nodes[0].distance(nodes[1]))
@@ -78,11 +88,15 @@ def get_formation(leader, mode):
         return nodes, distance_matrix
 
     if mode == 'square':
+        attractive_scaling_factor = 0.07
+        repulsive_scaling_factor = 5
         nodes = [leader, Node(leader.x, leader.y-2), Node(leader.x-2, leader.y-2), Node(leader.x-2, leader.y)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
         set_distance(distance_matrix, 0, 1, nodes[0].distance(nodes[1]))
+        set_distance(distance_matrix, 0, 2, nodes[0].distance(nodes[2]))
         set_distance(distance_matrix, 0, 3, nodes[0].distance(nodes[3]))
         set_distance(distance_matrix, 1, 2, nodes[1].distance(nodes[2]))
+        set_distance(distance_matrix, 1, 3, nodes[1].distance(nodes[3]))
         set_distance(distance_matrix, 2, 3, nodes[2].distance(nodes[3]))
         return nodes, distance_matrix
     
@@ -91,8 +105,6 @@ def get_formation(leader, mode):
     return nodes, distance_matrix
 
 def get_all_distances(nodes):
-    global attractive_scaling_factor
-    attractive_scaling_factor = 0.035
     distance_matrix = np.zeros((len(nodes), len(nodes)))
     for i in range(len(nodes)):
         for j in range(i+1, len(nodes)):
@@ -119,7 +131,7 @@ def plot_nodes(nodes, leader_index):
     plt.pause(0.1)  # Pause for 0.1 seconds to show the plot
     plt.draw()
 
-def updateLeader(leader):
+def update_leader(leader):
     if leader_trajectory == 'manual':
         key_pressed = readkey()
         if key_pressed == 'q':
@@ -168,25 +180,23 @@ def repulsive_force(i, nodes, distances):
     force = np.array([0,0])
     vector_i = np.array([nodes[i].x, nodes[i].y])
     beta = 2
-    scaling_factor = 0.035
+    scaling_factor = 0.45
 
     for j in range(0,len(nodes)):
         if distances[i][j] == 0 or i == j:
             continue
         vector_j = np.array([nodes[j].x, nodes[j].y])
-        print(f'vector {i}: {vector_i}')
-        print(f'vector {j}: {vector_j}')
+        print(f'point {i}: {vector_i}, point {j}: {vector_j}')
 
         norm = np.linalg.norm(vector_i - vector_j)
         delta = distances[i][j]
-        delta_o = 0.5
-        print(norm)
+        delta_o = 0.6
         if norm < delta_o:
-            print(f'(1/{beta}) * (1/({norm} - {delta}) - (1/{delta_o} - {delta})))**{beta}')
-            print(f'(1/{beta}) * (1/({norm - delta}) - (1/{delta_o - delta})))**{beta}')
-            print(f'(1/{beta}) * ({1/(norm - delta)} - {1/(delta_o - delta)})**{beta}')
-            print((1/beta) * (1/(norm - delta) - (1/(delta_o - delta)))**beta)
-            force = force + (1/beta) * (1/(norm - delta) - (1/(delta_o - delta)))**beta
+            print(f'{norm} < {delta_o}')
+            numerator = (vector_i - vector_j) * ((1 / (norm - delta)) - (1 / (delta_o - delta)))**(beta-1)
+            denominator = norm * (norm - delta)**2
+            print(f'p-force: {numerator / denominator}')
+            force = force - (numerator / denominator)
             print('-------------------')
 
     print(f'force: {force}')
@@ -198,26 +208,53 @@ def repulsive_force(i, nodes, distances):
     print('-------------------')
     print('#####################')
 
-def simulate_movement(nodes, distances):
+def update_node(i, nodes, distances, all_distances):
+    global attractive_scaling_factor
+    global repulsive_scaling_factor
+    attractive_force = np.array([0,0])
+    repulsive_force = np.array([0,0])
+    vector_i = np.array([nodes[i].x, nodes[i].y])
+    beta = 2
+    delta_o = 0.6
+
+    for j in range(0,len(nodes)):
+        vector_j = np.array([nodes[j].x, nodes[j].y])
+        if distances[i][j] != 0 and i != j:
+            attractive_force = attractive_force + (np.linalg.norm(vector_i - vector_j)**2 - distances[i][j]**2) * (vector_j - vector_i)
+
+        if all_distances[i][j] != 0 and i != j:
+            norm = np.linalg.norm(vector_i - vector_j)
+            delta = all_distances[i][j]
+            if norm < delta_o:
+                numerator = (vector_i - vector_j) * ((1 / (norm - delta)) - (1 / (delta_o - delta)))**(beta-1)
+                denominator = norm * (norm - delta)**2
+                repulsive_force = repulsive_force - (numerator / denominator)
+
+    nodes[i].x = nodes[i].x + (attractive_scaling_factor * attractive_force[0]) - (repulsive_scaling_factor * repulsive_force[0])
+    nodes[i].y = nodes[i].y + (attractive_scaling_factor * attractive_force[1]) - (repulsive_scaling_factor * repulsive_force[1])
+
+
+def simulate_movement(nodes, distances, all_distances):
     plt.ion()  # Turn on interactive mode for live plot
 
     plot_nodes(nodes, leader_index=0)
     while True:
-        res = updateLeader(nodes[0])
+        res = update_leader(nodes[0])
         if not res:
             break
 
         for i in range(1,len(nodes)):
-            attractive_force(i, nodes, distances)
+            #attractive_force(i, nodes, distances)
             #repulsive_force(i, nodes, distances)
+            update_node(i, nodes, distances, all_distances)
 
         plot_nodes(nodes, leader_index=0)
 
-nodes, distance_matrix = get_formation(Node(0, 0), 'triangle')
-distance_matrix = get_all_distances(nodes)
+nodes, distance_matrix = get_formation(Node(0, 0), 'square')
+#distance_matrix = get_all_distances(nodes)
 
 leader_trajectory = 'manual'
 #if select_trajectory():
 #    simulate_movement(nodes, distance_matrix)
 
-simulate_movement(nodes, distance_matrix)
+simulate_movement(nodes, distance_matrix, get_all_distances(nodes))
