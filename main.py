@@ -3,7 +3,7 @@ import numpy as np
 import math
 from readchar import readkey, key
 
-attractive_scaling_factor = 0 # Scaling factor for attractive force
+attractive_scaling_factor = 0.07 # Scaling factor for attractive force
 repulsive_scaling_factor = 0 # Scaling factor for repulsive force
 leader_velocity = 0.5  # Leader's velocity (units of displacement per second)
 leader_trajectory = 'linear'  # 'linear', 'circular', 'manual'
@@ -49,11 +49,9 @@ def select_trajectory():
     return True
 
 def get_formation(leader, mode):
-    global attractive_scaling_factor
     global repulsive_scaling_factor
 
     if mode == 'point':
-        attractive_scaling_factor = 0.07
         repulsive_scaling_factor = 0.3
         nodes = [leader, Node(leader.x, leader.y-1)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
@@ -61,7 +59,6 @@ def get_formation(leader, mode):
         return nodes, distance_matrix
 
     if mode == 'line':
-        attractive_scaling_factor = 0.07
         repulsive_scaling_factor = 0.35
         nodes = [leader, Node(leader.x, leader.y-1), Node(leader.x, leader.y-2), Node(leader.x, leader.y-3), Node(leader.x, leader.y-4)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
@@ -72,7 +69,6 @@ def get_formation(leader, mode):
         return nodes, distance_matrix
 
     if mode == 'triangle':
-        attractive_scaling_factor = 0.07
         repulsive_scaling_factor = 8
         nodes = [leader, Node(leader.x-1, -1), Node(leader.x+1, -1), Node(leader.x-2, -2), Node(leader.x, -2), Node(leader.x+2, -2)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
@@ -88,7 +84,6 @@ def get_formation(leader, mode):
         return nodes, distance_matrix
 
     if mode == 'square':
-        attractive_scaling_factor = 0.07
         repulsive_scaling_factor = 5
         nodes = [leader, Node(leader.x, leader.y-2), Node(leader.x-2, leader.y-2), Node(leader.x-2, leader.y)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
