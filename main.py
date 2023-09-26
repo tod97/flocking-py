@@ -48,6 +48,12 @@ def select_trajectory():
     return True
 
 def get_formation(leader, mode):
+    if mode == 'point':
+        nodes = [leader, Node(leader.x, leader.y-1)]
+        distance_matrix = np.zeros((len(nodes), len(nodes)))
+        set_distance(distance_matrix, 0, 1, nodes[0].distance(nodes[1]))
+        return nodes, distance_matrix
+
     if mode == 'line':
         nodes = [leader, Node(leader.x, leader.y-1), Node(leader.x, leader.y-2), Node(leader.x, leader.y-3), Node(leader.x, leader.y-4)]
         distance_matrix = np.zeros((len(nodes), len(nodes)))
@@ -143,7 +149,6 @@ def updateLeader(leader):
     return True
 
 def attractive_force(i, nodes, distances):
-    #print('#####################')
     global attractive_scaling_factor
     force = np.array([0,0])
     vector_i = np.array([nodes[i].x, nodes[i].y])
@@ -153,20 +158,10 @@ def attractive_force(i, nodes, distances):
             continue
         vector_j = np.array([nodes[j].x, nodes[j].y])
 
-        #print(f'vector {i}: {vector_i}')
-        #print(f'vector {j}: {vector_j}')
-        #print(f'({np.linalg.norm(vector_i - vector_j)**2} - {distances[i][j]**2}) * ({vector_j - vector_i}) = {(np.linalg.norm(vector_i - vector_j)**2 - distances[i][j]**2) * (vector_j - vector_i)}')
         force = force + (np.linalg.norm(vector_i - vector_j)**2 - distances[i][j]**2) * (vector_j - vector_i)
-        #print('-------------------')
 
-    #print(f'force: {force}')
-    #print(f'force scaled: {scaling_factor * force}')
-    #print(f'node before: {nodes[i]}')
     nodes[i].x = nodes[i].x + attractive_scaling_factor * force[0]
     nodes[i].y = nodes[i].y + attractive_scaling_factor * force[1]
-    #print(f'node after: {nodes[i]}')
-    #print('-------------------')
-    #print('#####################')
 
 def repulsive_force(i, nodes, distances):
     print('#####################')
@@ -176,7 +171,7 @@ def repulsive_force(i, nodes, distances):
     scaling_factor = 0.035
 
     for j in range(0,len(nodes)):
-        if i == j:
+        if distances[i][j] == 0 or i == j:
             continue
         vector_j = np.array([nodes[j].x, nodes[j].y])
         print(f'vector {i}: {vector_i}')
@@ -184,7 +179,7 @@ def repulsive_force(i, nodes, distances):
 
         norm = np.linalg.norm(vector_i - vector_j)
         delta = distances[i][j]
-        delta_o = 4
+        delta_o = 0.5
         print(norm)
         if norm < delta_o:
             print(f'(1/{beta}) * (1/({norm} - {delta}) - (1/{delta_o} - {delta})))**{beta}')
