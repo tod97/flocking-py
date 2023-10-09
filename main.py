@@ -118,10 +118,15 @@ def plot_nodes(nodes, leader_index):
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.title('Movement of Nodes')
+    
+    #############################################
+    #INFO: The first two rows set a following camera view, the last two rows set a fixed camera view
     plt.xlim(nodes[0].x - 10, nodes[0].x + 10)  # Set the x-axis limits
     plt.ylim(nodes[0].y - 10, nodes[0].y + 10)  # Set the y-axis limits
     #plt.xlim(-10, 10)
     #plt.ylim(-10, 10)
+    #############################################
+
     plt.grid(False)  # Disable grid lines
     plt.pause(0.1)  # Pause for 0.1 seconds to show the plot
     plt.draw()
@@ -171,7 +176,6 @@ def attractive_force(i, nodes, distances):
     nodes[i].y = nodes[i].y + attractive_scaling_factor * force[1]
 
 def repulsive_force(i, nodes, distances):
-    print('#####################')
     force = np.array([0,0])
     vector_i = np.array([nodes[i].x, nodes[i].y])
     beta = 2
@@ -181,27 +185,17 @@ def repulsive_force(i, nodes, distances):
         if distances[i][j] == 0 or i == j:
             continue
         vector_j = np.array([nodes[j].x, nodes[j].y])
-        print(f'point {i}: {vector_i}, point {j}: {vector_j}')
 
         norm = np.linalg.norm(vector_i - vector_j)
         delta = distances[i][j]
         delta_o = 0.6
         if norm < delta_o:
-            print(f'{norm} < {delta_o}')
             numerator = (vector_i - vector_j) * ((1 / (norm - delta)) - (1 / (delta_o - delta)))**(beta-1)
             denominator = norm * (norm - delta)**2
-            print(f'p-force: {numerator / denominator}')
             force = force - (numerator / denominator)
-            print('-------------------')
 
-    print(f'force: {force}')
-    print(f'force scaled: {scaling_factor * force}')
-    print(f'node before: {nodes[i]}')
     nodes[i].x = nodes[i].x - scaling_factor * force[0]
     nodes[i].y = nodes[i].y - scaling_factor * force[1]
-    print(f'node after: {nodes[i]}')
-    print('-------------------')
-    print('#####################')
 
 def update_node(i, nodes, distances, all_distances):
     global attractive_scaling_factor
@@ -239,17 +233,23 @@ def simulate_movement(nodes, distances, all_distances):
             break
 
         for i in range(1,len(nodes)):
-            #attractive_force(i, nodes, distances)
-            #repulsive_force(i, nodes, distances)
             update_node(i, nodes, distances, all_distances)
 
         plot_nodes(nodes, leader_index=0)
 
+
+#############################################
+#INFO: The formation sets only partial links between nodes, the row below sets all links between nodes
 nodes, distance_matrix = get_formation(Node(0, 0), 'square')
 #distance_matrix = get_all_distances(nodes)
+#############################################
 
-leader_trajectory = 'manual'
-#if select_trajectory():
-#    simulate_movement(nodes, distance_matrix)
+#############################################
+#INFO: The leader trajectory can be selected manually or from the menu
+if select_trajectory():
+    simulate_movement(nodes, distance_matrix, get_all_distances(nodes))
+#leader_trajectory = 'manual'
+#############################################
+
 
 simulate_movement(nodes, distance_matrix, get_all_distances(nodes))
